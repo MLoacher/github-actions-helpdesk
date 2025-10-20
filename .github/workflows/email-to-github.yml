@@ -1,10 +1,17 @@
 name: Email to GitHub
 
 on:
+  # Option 1: Scheduled polling (disable by commenting out if using webhooks only)
   schedule:
-    # Run every 5 minutes
+    # Run every 5 minutes (adjust as needed: */15, */30, 0 * for hourly)
     - cron: '*/5 * * * *'
-  workflow_dispatch: # Allow manual triggering
+
+  # Option 2: Webhook-driven (triggered by external services)
+  repository_dispatch:
+    types: [check_emails]
+
+  # Option 3: Manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   process-emails:

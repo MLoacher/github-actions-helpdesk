@@ -81,13 +81,39 @@ Go to Settings → Actions → General → Workflow permissions:
 - Select "Read and write permissions"
 - Check "Allow GitHub Actions to create and approve pull requests"
 
-### 5. Deploy
+### 5. Choose Your Email Processing Trigger
+
+The workflow supports three trigger options. You can use one or combine them:
+
+**Option 1: Scheduled Polling (Default)**
+- Checks for new emails every 5 minutes automatically
+- Uses GitHub Actions minutes (~2000 free/month)
+- To adjust frequency, edit `.github/workflows/email-to-github.yml` line 7:
+  - `*/15 * * * *` = every 15 minutes
+  - `*/30 * * * *` = every 30 minutes
+  - `0 * * * *` = every hour
+- To disable: Comment out lines 4-7 in the workflow file
+
+**Option 2: Webhook-Driven (Recommended for minimizing Actions usage)**
+- Triggered instantly when emails arrive (via external service)
+- Only uses Actions minutes when emails are received
+- See [Webhook Integration Guide](#webhook-integration-for-instant-email-processing) below
+
+**Option 3: Manual Trigger**
+- Go to Actions tab → "Email to GitHub" → "Run workflow"
+- Useful for testing or on-demand processing
+
+**Hybrid Approach (Recommended):**
+- Use webhooks for instant processing
+- Keep hourly cron as backup (in case webhook fails)
+
+### 6. Deploy
 
 ```bash
 git push origin main
 ```
 
-The workflows will automatically start running on their schedules.
+The workflows will start running based on your chosen triggers.
 
 ## Usage
 
@@ -208,6 +234,134 @@ github-helpdesk-actions/
 ✅ Native GitHub UI
 ✅ Easy deployment
 ✅ Optional GitHub Projects integration
+
+## Webhook Integration for Instant Email Processing
+
+To minimize GitHub Actions usage and process emails instantly, you can trigger the workflow via webhooks instead of scheduled polling.
+
+### How It Works
+
+1. External service receives email
+2. Service calls GitHub API with `repository_dispatch` event
+3. Workflow runs immediately and processes emails
+
+### Setup Steps
+
+#### 1. Create a Personal Access Token (PAT)
+
+1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. Click "Generate new token (classic)"
+3. Give it a name: `Helpdesk Webhook Token`
+4. Select scopes: **`repo`** (full control of private repositories)
+5. Click "Generate token" and **copy the token** (starts with `ghp_`)
+6. Store it securely (you'll need it for the webhook service)
+
+#### 2. Test the Webhook
+
+Test manually first to ensure it works:
+
+```bash
+curl -X POST \
+  -H "Accept: application/vnd.github.v3+json" \
+  -H "Authorization: token ghp_YOUR_TOKEN_HERE" \
+  https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/dispatches \
+  -d '{"event_type":"check_emails"}'
+```
+
+You should see the workflow run in the Actions tab.
+
+#### 3. Choose a Webhook Service
+
+### Option A: Zapier (Easiest, No Code)
+
+**Free tier:** 100 tasks/month
+
+1. Create a Zap: **Email by Zapier** → **Webhooks by Zapier**
+2. Trigger: "New Inbound Email"
+   - Get your Zapier email address (e.g., `myhelp123@robot.zapier.com`)
+3. Action: "POST Request"
+   - URL: `https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/dispatches`
+   - Headers:
+     ```
+     Accept: application/vnd.github.v3+json
+     Authorization: token ghp_YOUR_TOKEN
+     ```
+   - Data:
+     ```json
+     {"event_type": "check_emails"}
+     ```
+4. Forward your support emails to the Zapier email address
+
+### Option B: Make.com (formerly Integromat)
+
+**Free tier:** 1,000 operations/month
+
+1. Create a scenario: **Email** → **HTTP**
+2. Email module: "Watch emails"
+   - Configure IMAP connection (same credentials as GitHub Actions)
+3. HTTP module: "Make a request"
+   - URL: `https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/dispatches`
+   - Method: POST
+   - Headers:
+     ```
+     Accept: application/vnd.github.v3+json
+     Authorization: token ghp_YOUR_TOKEN
+     ```
+   - Body:
+     ```json
+     {"event_type": "check_emails"}
+     ```
+
+### Option C: SendGrid Inbound Parse
+
+**Free tier:** 100 emails/day
+
+1. Set up SendGrid Inbound Parse webhook
+2. Create a serverless function (Cloudflare Workers, AWS Lambda, etc.) to:
+   - Receive webhook from SendGrid
+   - Call GitHub API with `repository_dispatch`
+3. Configure DNS MX records to point to SendGrid
+
+### Option D: Custom Script (Advanced)
+
+Run a small script on your server that uses IMAP IDLE:
+
+```python
+# webhook_trigger.py
+import imaplib
+import requests
+import os
+
+def trigger_github_workflow():
+    requests.post(
+        f"https://api.github.com/repos/{os.getenv('REPO')}/dispatches",
+        headers={
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": f"token {os.getenv('GITHUB_TOKEN')}"
+        },
+        json={"event_type": "check_emails"}
+    )
+
+# Use IMAP IDLE to wait for new emails
+mail = imaplib.IMAP4_SSL('imap.gmail.com')
+mail.login(user, password)
+mail.select('INBOX')
+# ... implement IDLE monitoring
+# When new email arrives, call trigger_github_workflow()
+```
+
+### Recommended Setup: Hybrid Approach
+
+1. **Primary:** Use Zapier/Make.com webhook (instant processing)
+2. **Backup:** Keep hourly cron job (catches any missed emails)
+
+To adjust cron to hourly backup, edit `.github/workflows/email-to-github.yml`:
+```yaml
+schedule:
+  - cron: '0 * * * *'  # Every hour instead of every 5 minutes
+```
+
+This gives you instant processing with a safety net!
 
 ## Optional: GitHub Projects Integration
 
