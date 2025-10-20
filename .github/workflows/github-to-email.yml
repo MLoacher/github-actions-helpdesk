@@ -1,10 +1,6 @@
-name: GitHub to Email
+name: GitHub to Email (Reusable Workflow)
 
 on:
-  issue_comment:
-    types: [created]
-
-  # Reusable workflow (can be called by other repositories)
   workflow_call:
     secrets:
       SMTP_PASSWORD:
@@ -43,18 +39,22 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'helpdesk')
 
     steps:
-      - name: Checkout repository
+      - name: Checkout helpdesk scripts
         uses: actions/checkout@v4
+        with:
+          repository: MLoacher/github-actions-helpdesk
+          path: helpdesk-scripts
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
+          cache-dependency-path: helpdesk-scripts/requirements.txt
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -r helpdesk-scripts/requirements.txt
 
       - name: Send email
         env:
@@ -66,4 +66,4 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: |
-          python scripts/github_to_email.py
+          python helpdesk-scripts/scripts/github_to_email.py

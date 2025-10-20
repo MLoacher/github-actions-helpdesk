@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Repos/helpdesk/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

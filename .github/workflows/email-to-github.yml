@@ -1,18 +1,6 @@
-name: Email to GitHub
+name: Email to GitHub (Reusable Workflow)
 
 on:
-  # Option 1: Scheduled polling (disable by commenting out if using webhooks only)
-  schedule:
-    # Run every 6 hours (adjust as needed: */15, */30, 0 * for hourly)
-    - cron: '0 */6 * * *'
-
-  # Option 2: Webhook-driven (triggered by external services)
-  repository_dispatch:
-
-  # Option 3: Manual trigger from GitHub UI
-  workflow_dispatch:
-
-  # Option 4: Reusable workflow (can be called by other repositories)
   workflow_call:
     secrets:
       IMAP_PASSWORD:
@@ -48,18 +36,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout helpdesk scripts
         uses: actions/checkout@v4
+        with:
+          repository: MLoacher/github-actions-helpdesk
+          path: helpdesk-scripts
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
+          cache-dependency-path: helpdesk-scripts/requirements.txt
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -r helpdesk-scripts/requirements.txt
 
       - name: Process emails
         env:
@@ -71,4 +63,4 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           PROJECT_ID: ${{ inputs.PROJECT_ID }}
         run: |
-          python scripts/email_to_github.py
+          python helpdesk-scripts/scripts/email_to_github.py
