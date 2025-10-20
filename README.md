@@ -265,8 +265,10 @@ curl -X POST \
   -H "Accept: application/vnd.github.v3+json" \
   -H "Authorization: token ghp_YOUR_TOKEN_HERE" \
   https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/dispatches \
-  -d '{"event_type":"check_emails"}'
+  -d '{"event_type":"trigger"}'
 ```
+
+**Note:** The `event_type` can be any value - the workflow will trigger regardless.
 
 You should see the workflow run in the Actions tab.
 
@@ -288,7 +290,7 @@ You should see the workflow run in the Actions tab.
      ```
    - Data:
      ```json
-     {"event_type": "check_emails"}
+     {"event_type": "trigger"}
      ```
 4. Forward your support emails to the Zapier email address
 
@@ -309,7 +311,7 @@ You should see the workflow run in the Actions tab.
      ```
    - Body:
      ```json
-     {"event_type": "check_emails"}
+     {"event_type": "trigger"}
      ```
 
 ### Option C: SendGrid Inbound Parse
@@ -339,7 +341,7 @@ def trigger_github_workflow():
             "Accept": "application/vnd.github.v3+json",
             "Authorization": f"token {os.getenv('GITHUB_TOKEN')}"
         },
-        json={"event_type": "check_emails"}
+        json={"event_type": "trigger"}
     )
 
 # Use IMAP IDLE to wait for new emails
