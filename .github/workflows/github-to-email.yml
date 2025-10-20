@@ -1,4 +1,4 @@
-name: GitHub to Email (Reusable Workflow)
+name: GitHub to Email
 
 on:
   workflow_call:
