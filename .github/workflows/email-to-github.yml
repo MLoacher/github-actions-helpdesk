@@ -3,8 +3,8 @@ name: Email to GitHub
 on:
   # Option 1: Scheduled polling (disable by commenting out if using webhooks only)
   schedule:
-    # Run every 5 minutes (adjust as needed: */15, */30, 0 * for hourly)
-    - cron: '*/5 * * * *'
+    # Run every 6 hours (adjust as needed: */15, */30, 0 * for hourly)
+    - cron: '* */6 * * *'
 
   # Option 2: Webhook-driven (triggered by external services)
   repository_dispatch:
