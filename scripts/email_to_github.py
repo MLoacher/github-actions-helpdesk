@@ -275,6 +275,10 @@ def main():
         emails = fetch_unseen_emails(mail)
         logger.info(f"Processing {len(emails)} emails")
 
+        # Track success/failure
+        processed_count = 0
+        failed_count = 0
+
         # Process each email
         for email_msg in emails:
             try:
@@ -283,14 +287,22 @@ def main():
                 if success:
                     # Mark as seen only if processing was successful
                     mark_email_as_seen(mail, email_msg.uid.encode())
+                    processed_count += 1
                 else:
                     logger.warning(f"Skipping email {email_msg.uid} due to processing error")
+                    failed_count += 1
 
             except Exception as e:
                 logger.error(f"Error processing email {email_msg.uid}: {e}")
+                failed_count += 1
                 continue
 
-        logger.info("Email processing complete")
+        logger.info(f"Email processing complete: {processed_count} processed, {failed_count} failed")
+
+        # Exit with error if any emails failed to process
+        if failed_count > 0:
+            logger.error(f"Failed to process {failed_count} email(s)")
+            sys.exit(1)
 
     finally:
         close_imap(mail)

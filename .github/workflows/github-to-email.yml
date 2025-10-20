@@ -36,13 +36,3 @@ jobs:
           GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: |
           python scripts/github_to_email.py
-
-      - name: Report status
-        if: always()
-        run: |
-          if [ $? -eq 0 ]; then
-            echo "✅ Email sent successfully"
-          else
-            echo "❌ Failed to send email"
-            exit 1
-          fi

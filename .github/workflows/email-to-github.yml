@@ -34,13 +34,3 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           python scripts/email_to_github.py
-
-      - name: Report status
-        if: always()
-        run: |
-          if [ $? -eq 0 ]; then
-            echo "✅ Email processing completed successfully"
-          else
-            echo "❌ Email processing failed"
-            exit 1
-          fi
