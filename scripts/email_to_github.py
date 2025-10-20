@@ -34,13 +34,14 @@ def get_env_or_exit(var_name: str) -> str:
     return value
 
 
-def process_email(email_msg, github: GitHubHelper) -> bool:
+def process_email(email_msg, github: GitHubHelper, project_id: str = None) -> bool:
     """
     Process a single email message and create/update GitHub issue.
 
     Args:
         email_msg: EmailMessage object
         github: GitHubHelper instance
+        project_id: Optional GitHub Project ID to add new issues to
 
     Returns:
         True if successful
@@ -69,10 +70,10 @@ def process_email(email_msg, github: GitHubHelper) -> bool:
         else:
             # Create new issue
             logger.info(f"[NEW] No existing issue found, creating new ticket for {from_email}")
-            return create_new_issue(email_msg, from_email, github)
+            return create_new_issue(email_msg, from_email, github, project_id)
 
 
-def create_new_issue(email_msg, from_email: str, github: GitHubHelper) -> bool:
+def create_new_issue(email_msg, from_email: str, github: GitHubHelper, project_id: str = None) -> bool:
     """
     Create a new GitHub issue from email.
 
@@ -80,6 +81,7 @@ def create_new_issue(email_msg, from_email: str, github: GitHubHelper) -> bool:
         email_msg: EmailMessage object
         from_email: Sender email address
         github: GitHubHelper instance
+        project_id: Optional GitHub Project ID to add issue to
 
     Returns:
         True if successful
@@ -112,6 +114,7 @@ def create_new_issue(email_msg, from_email: str, github: GitHubHelper) -> bool:
 
     if issue:
         actual_number = issue['number']
+        issue_node_id = issue.get('node_id')
         logger.info(f"✅ Successfully created issue #{actual_number}: {title}")
 
         # If predicted number was wrong, update the title
@@ -119,6 +122,11 @@ def create_new_issue(email_msg, from_email: str, github: GitHubHelper) -> bool:
             correct_title = format_issue_title(actual_number, email_msg.subject)
             github.update_issue(actual_number, title=correct_title)
             logger.info(f"Updated title to use correct issue number: [GH-{actual_number:04d}]")
+
+        # Add to project if project_id is provided
+        if project_id and issue_node_id:
+            logger.info(f"📋 Adding issue #{actual_number} to GitHub Project")
+            github.add_issue_to_project(issue_node_id, project_id)
 
         return True
     else:
@@ -261,6 +269,13 @@ def main():
     github_token = get_env_or_exit('GITHUB_TOKEN')
     github_repository = get_env_or_exit('GITHUB_REPOSITORY')
 
+    # Optional: GitHub Project ID
+    github_project_id = os.getenv('PROJECT_ID')
+    if github_project_id:
+        logger.info(f"📋 GitHub Project integration enabled: {github_project_id}")
+    else:
+        logger.info("📋 GitHub Project integration disabled (PROJECT_ID not set)")
+
     # Initialize GitHub helper
     github = GitHubHelper(github_token, github_repository)
 
@@ -283,7 +298,7 @@ def main():
         # Process each email
         for email_msg in emails:
             try:
-                success = process_email(email_msg, github)
+                success = process_email(email_msg, github, github_project_id)
 
                 if success:
                     # Mark as seen only if processing was successful

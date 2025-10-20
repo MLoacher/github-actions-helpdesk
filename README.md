@@ -42,6 +42,7 @@ A serverless email-to-GitHub-issues helpdesk system that runs entirely on GitHub
 
 Go to repository **Settings → Secrets and variables → Actions → Variables tab**, and add:
 
+**Required:**
 ```
 IMAP_HOST=imap.gmail.com
 IMAP_PORT=993
@@ -51,6 +52,13 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=CarolinJerGrp@gmail.com
 ```
+
+**Optional - GitHub Project Integration:**
+```
+PROJECT_ID=PVT_kwHOAYg_f84BFG26
+```
+
+If you want issues to be automatically added to a GitHub Project board, add the `PROJECT_ID` variable. See [How to Get Your Project ID](#how-to-get-your-github-project-id) below.
 
 ### 2. Configure Secrets (Sensitive Data Only)
 
@@ -199,6 +207,62 @@ github-helpdesk-actions/
 ✅ Built-in secrets management
 ✅ Native GitHub UI
 ✅ Easy deployment
+✅ Optional GitHub Projects integration
+
+## Optional: GitHub Projects Integration
+
+### How to Get Your GitHub Project ID
+
+If you want new issues to be automatically added to a GitHub Project board:
+
+1. **Create a GitHub Project** (if you don't have one):
+   - Go to your repository or organization
+   - Click on "Projects" tab
+   - Click "New project"
+   - Choose a template or start from scratch
+
+2. **Get the Project ID**:
+
+   **Method 1: From Project URL**
+   - Open your project
+   - Look at the URL: `https://github.com/users/USERNAME/projects/12`
+   - Use the GitHub GraphQL API Explorer: https://docs.github.com/en/graphql/overview/explorer
+   - Run this query (replace `12` with your project number):
+
+   ```graphql
+   query {
+     user(login: "USERNAME") {
+       projectV2(number: 12) {
+         id
+       }
+     }
+   }
+   ```
+
+   **Method 2: Using GitHub CLI**
+   ```bash
+   gh api graphql -f query='
+     query {
+       user(login: "USERNAME") {
+         projectV2(number: 12) {
+           id
+         }
+       }
+     }
+   '
+   ```
+
+   For organization projects, replace `user` with `organization`.
+
+3. **Copy the Project ID**:
+   - The ID will look like: `PVT_kwHOAYg_f84BFG26`
+   - Add this to your repository variables as `PROJECT_ID`
+
+4. **Grant Permissions**:
+   - Go to Project Settings → Manage access
+   - Ensure the repository has write access to the project
+
+Once configured, all new helpdesk issues will automatically appear in your project board!
 
 ## License
 

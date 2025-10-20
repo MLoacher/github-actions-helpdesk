@@ -254,3 +254,57 @@ class GitHubHelper:
         except requests.exceptions.RequestException as e:
             logger.error(f"Error getting next issue number: {e}")
             return 1
+
+    def add_issue_to_project(self, issue_id: str, project_id: str) -> bool:
+        """
+        Add an issue to a GitHub Project (V2).
+
+        Args:
+            issue_id: Issue node ID (not issue number)
+            project_id: Project node ID (format: PVT_xxx)
+
+        Returns:
+            True if successful
+        """
+        if not project_id:
+            logger.debug("No project ID provided, skipping project addition")
+            return True
+
+        # GitHub Projects V2 uses GraphQL API
+        graphql_url = "https://api.github.com/graphql"
+
+        query = """
+        mutation($projectId: ID!, $contentId: ID!) {
+          addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+            item {
+              id
+            }
+          }
+        }
+        """
+
+        variables = {
+            "projectId": project_id,
+            "contentId": issue_id
+        }
+
+        try:
+            logger.info(f"Adding issue to project {project_id}")
+            response = requests.post(
+                graphql_url,
+                json={"query": query, "variables": variables},
+                headers=self.headers
+            )
+            response.raise_for_status()
+            result = response.json()
+
+            if "errors" in result:
+                logger.error(f"GraphQL errors: {result['errors']}")
+                return False
+
+            logger.info(f"Successfully added issue to project")
+            return True
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error adding issue to project: {e}")
+            return False

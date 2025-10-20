@@ -32,5 +32,6 @@ jobs:
           IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          PROJECT_ID: ${{ vars.PROJECT_ID }}
         run: |
           python scripts/email_to_github.py
