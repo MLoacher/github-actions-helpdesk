@@ -26,9 +26,9 @@ jobs:
 
       - name: Process emails
         env:
-          IMAP_HOST: ${{ secrets.IMAP_HOST }}
-          IMAP_PORT: ${{ secrets.IMAP_PORT }}
-          IMAP_USER: ${{ secrets.IMAP_USER }}
+          IMAP_HOST: ${{ vars.IMAP_HOST }}
+          IMAP_PORT: ${{ vars.IMAP_PORT }}
+          IMAP_USER: ${{ vars.IMAP_USER }}
           IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}

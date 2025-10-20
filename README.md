@@ -35,35 +35,42 @@ A serverless email-to-GitHub-issues helpdesk system that runs entirely on GitHub
 
 ## Setup
 
-### 1. Configure GitHub Secrets
+### 1. Configure Repository Variables (Non-Sensitive)
 
-Go to repository Settings → Secrets and variables → Actions, and add:
+Go to repository **Settings → Secrets and variables → Actions → Variables tab**, and add:
 
 ```
 IMAP_HOST=imap.gmail.com
 IMAP_PORT=993
-IMAP_USER=support@yourcompany.com
-IMAP_PASSWORD=your-app-specific-password
+IMAP_USER=CarolinJerGrp@gmail.com
 
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=support@yourcompany.com
+SMTP_USER=CarolinJerGrp@gmail.com
+```
+
+### 2. Configure Secrets (Sensitive Data Only)
+
+Go to repository **Settings → Secrets and variables → Actions → Secrets tab**, and add:
+
+```
+IMAP_PASSWORD=your-app-specific-password
 SMTP_PASSWORD=your-app-specific-password
 ```
 
 **Note:** For Gmail, you'll need to create an [App Password](https://support.google.com/accounts/answer/185833).
 
-### 2. Enable GitHub Actions
+### 3. Enable GitHub Actions
 
 Ensure GitHub Actions is enabled for your repository in Settings → Actions → General.
 
-### 3. Adjust Workflow Permissions
+### 4. Adjust Workflow Permissions
 
 Go to Settings → Actions → General → Workflow permissions:
 - Select "Read and write permissions"
 - Check "Allow GitHub Actions to create and approve pull requests"
 
-### 4. Deploy
+### 5. Deploy
 
 ```bash
 git push origin main
