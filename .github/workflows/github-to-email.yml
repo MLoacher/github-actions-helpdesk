@@ -4,6 +4,37 @@ on:
   issue_comment:
     types: [created]
 
+  # Reusable workflow (can be called by other repositories)
+  workflow_call:
+    secrets:
+      SMTP_PASSWORD:
+        required: true
+      IMAP_PASSWORD:
+        required: false
+        description: "IMAP password (not used in github-to-email)"
+    inputs:
+      SMTP_HOST:
+        required: true
+        type: string
+      SMTP_PORT:
+        required: true
+        type: string
+      SMTP_USER:
+        required: true
+        type: string
+      IMAP_HOST:
+        required: false
+        type: string
+      IMAP_PORT:
+        required: false
+        type: string
+      IMAP_USER:
+        required: false
+        type: string
+      PROJECT_ID:
+        required: false
+        type: string
+
 jobs:
   send-email:
     runs-on: ubuntu-latest
@@ -27,9 +58,9 @@ jobs:
 
       - name: Send email
         env:
-          SMTP_HOST: ${{ vars.SMTP_HOST }}
-          SMTP_PORT: ${{ vars.SMTP_PORT }}
-          SMTP_USER: ${{ vars.SMTP_USER }}
+          SMTP_HOST: ${{ inputs.SMTP_HOST }}
+          SMTP_PORT: ${{ inputs.SMTP_PORT }}
+          SMTP_USER: ${{ inputs.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}

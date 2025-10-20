@@ -4,13 +4,44 @@ on:
   # Option 1: Scheduled polling (disable by commenting out if using webhooks only)
   schedule:
     # Run every 6 hours (adjust as needed: */15, */30, 0 * for hourly)
-    - cron: '* */6 * * *'
+    - cron: '0 */6 * * *'
 
   # Option 2: Webhook-driven (triggered by external services)
   repository_dispatch:
 
   # Option 3: Manual trigger from GitHub UI
   workflow_dispatch:
+
+  # Option 4: Reusable workflow (can be called by other repositories)
+  workflow_call:
+    secrets:
+      IMAP_PASSWORD:
+        required: true
+      SMTP_PASSWORD:
+        required: false
+        description: "SMTP password (not used in email-to-github)"
+    inputs:
+      IMAP_HOST:
+        required: true
+        type: string
+      IMAP_PORT:
+        required: true
+        type: string
+      IMAP_USER:
+        required: true
+        type: string
+      SMTP_HOST:
+        required: false
+        type: string
+      SMTP_PORT:
+        required: false
+        type: string
+      SMTP_USER:
+        required: false
+        type: string
+      PROJECT_ID:
+        required: false
+        type: string
 
 jobs:
   process-emails:
@@ -32,12 +63,12 @@ jobs:
 
       - name: Process emails
         env:
-          IMAP_HOST: ${{ vars.IMAP_HOST }}
-          IMAP_PORT: ${{ vars.IMAP_PORT }}
-          IMAP_USER: ${{ vars.IMAP_USER }}
+          IMAP_HOST: ${{ inputs.IMAP_HOST }}
+          IMAP_PORT: ${{ inputs.IMAP_PORT }}
+          IMAP_USER: ${{ inputs.IMAP_USER }}
           IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          PROJECT_ID: ${{ vars.PROJECT_ID }}
+          PROJECT_ID: ${{ inputs.PROJECT_ID }}
         run: |
           python scripts/email_to_github.py

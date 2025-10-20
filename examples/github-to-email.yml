@@ -1,0 +1,25 @@
+# Example: Call the reusable github-to-email workflow from another repository
+#
+# Copy this file to your repository at:
+# .github/workflows/github-to-email.yml
+#
+# Then configure the variables and secrets in your repository settings.
+
+name: GitHub to Email Helpdesk
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  send-email:
+    # Only run if the issue has the helpdesk label
+    if: contains(github.event.issue.labels.*.name, 'helpdesk')
+
+    uses: MLoacher/github-helpdesk-actions/.github/workflows/github-to-email.yml@main
+    secrets:
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+    with:
+      SMTP_HOST: ${{ vars.SMTP_HOST }}
+      SMTP_PORT: ${{ vars.SMTP_PORT }}
+      SMTP_USER: ${{ vars.SMTP_USER }}

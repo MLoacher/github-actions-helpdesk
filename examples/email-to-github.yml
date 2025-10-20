@@ -1,0 +1,30 @@
+# Example: Call the reusable email-to-github workflow from another repository
+#
+# Copy this file to your repository at:
+# .github/workflows/email-to-github.yml
+#
+# Then configure the variables and secrets in your repository settings.
+
+name: Email to GitHub Helpdesk
+
+on:
+  # Schedule: Adjust frequency as needed
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+
+  # Webhook trigger
+  repository_dispatch:
+
+  # Manual trigger
+  workflow_dispatch:
+
+jobs:
+  process-emails:
+    uses: MLoacher/github-helpdesk-actions/.github/workflows/email-to-github.yml@main
+    secrets:
+      IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
+    with:
+      IMAP_HOST: ${{ vars.IMAP_HOST }}
+      IMAP_PORT: ${{ vars.IMAP_PORT }}
+      IMAP_USER: ${{ vars.IMAP_USER }}
+      PROJECT_ID: ${{ vars.PROJECT_ID }}  # Optional

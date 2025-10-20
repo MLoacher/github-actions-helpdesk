@@ -14,6 +14,14 @@ A serverless email-to-GitHub-issues helpdesk system that runs entirely on GitHub
 - 🤖 Loop prevention (no bot-to-bot conversations)
 - 💾 Stateless design using IMAP flags and GitHub Issues
 - 🆓 Runs on GitHub Actions free tier
+- 🔁 **Reusable workflows** - Use across multiple repositories
+
+## Two Ways to Use
+
+1. **Direct Setup** - Install in your repository (see setup below)
+2. **Reusable Workflows** - Reference this repo from other repositories ([see USAGE.md](USAGE.md))
+
+**Want to use this for multiple projects?** Check out [USAGE.md](USAGE.md) to learn how to call these workflows from other repositories without copying any code!
 
 ## Architecture
 
