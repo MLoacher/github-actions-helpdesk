@@ -45,29 +45,30 @@ def process_email(email_msg, github: GitHubHelper) -> bool:
     Returns:
         True if successful
     """
-    logger.info(f"Processing email: {email_msg.subject}")
+    logger.info(f"Processing email from {email_msg.from_addr}: '{email_msg.subject}'")
 
     # Extract sender email
     from_email = parse_email_address(email_msg.from_addr)
+    logger.info(f"Sender email: {from_email}")
 
     # Check if this is a reply to an existing ticket
     gh_number = extract_gh_number_from_subject(email_msg.subject)
 
     if gh_number:
         # Reply to existing issue
-        logger.info(f"Found GH number in subject: {gh_number}")
+        logger.info(f"[REPLY] Found GH-{gh_number} in subject, adding comment to existing issue")
         return handle_reply(email_msg, gh_number, from_email, github)
     else:
         # Try to find existing issue by email metadata
-        logger.info("No GH number found, searching for existing issue")
+        logger.info("[NEW/REPLY] No GH number in subject, searching by thread metadata...")
         existing_issue = find_issue_by_thread(email_msg, from_email, github)
 
         if existing_issue:
-            logger.info(f"Found existing issue #{existing_issue['number']}")
+            logger.info(f"[REPLY] Found existing issue #{existing_issue['number']} by thread ID, adding comment")
             return handle_reply(email_msg, existing_issue['number'], from_email, github)
         else:
             # Create new issue
-            logger.info("Creating new issue")
+            logger.info(f"[NEW] No existing issue found, creating new ticket for {from_email}")
             return create_new_issue(email_msg, from_email, github)
 
 
@@ -111,17 +112,17 @@ def create_new_issue(email_msg, from_email: str, github: GitHubHelper) -> bool:
 
     if issue:
         actual_number = issue['number']
-        logger.info(f"Created issue #{actual_number}")
+        logger.info(f"✅ Successfully created issue #{actual_number}: {title}")
 
         # If predicted number was wrong, update the title
         if actual_number != issue_number:
             correct_title = format_issue_title(actual_number, email_msg.subject)
             github.update_issue(actual_number, title=correct_title)
-            logger.info(f"Updated title to use correct number: {correct_title}")
+            logger.info(f"Updated title to use correct issue number: [GH-{actual_number:04d}]")
 
         return True
     else:
-        logger.error("Failed to create issue")
+        logger.error(f"❌ Failed to create issue for email from {from_email}")
         return False
 
 
@@ -147,7 +148,7 @@ def handle_reply(email_msg, issue_number: int, from_email: str, github: GitHubHe
 
     # Reopen if closed
     if issue['state'] == 'closed':
-        logger.info(f"Reopening closed issue #{issue_number}")
+        logger.info(f"🔓 Reopening closed issue #{issue_number} due to customer reply")
         github.reopen_issue(issue_number)
 
     # Sanitize body
@@ -162,14 +163,14 @@ def handle_reply(email_msg, issue_number: int, from_email: str, github: GitHubHe
     comment = github.add_comment(issue_number, comment_body)
 
     if comment:
-        logger.info(f"Added comment to issue #{issue_number}")
+        logger.info(f"✅ Successfully added comment to issue #{issue_number} from {from_email}")
 
         # Update issue metadata with new message ID
         update_issue_metadata(issue, email_msg.message_id, github)
 
         return True
     else:
-        logger.error(f"Failed to add comment to issue #{issue_number}")
+        logger.error(f"❌ Failed to add comment to issue #{issue_number} for {from_email}")
         return False
 
 
@@ -297,12 +298,20 @@ def main():
                 failed_count += 1
                 continue
 
-        logger.info(f"Email processing complete: {processed_count} processed, {failed_count} failed")
+        logger.info("=" * 60)
+        logger.info(f"📊 Email processing summary:")
+        logger.info(f"   ✅ Successfully processed: {processed_count}")
+        logger.info(f"   ❌ Failed: {failed_count}")
+        logger.info(f"   📧 Total emails fetched: {len(emails)}")
+        logger.info("=" * 60)
 
         # Exit with error if any emails failed to process
         if failed_count > 0:
-            logger.error(f"Failed to process {failed_count} email(s)")
+            logger.error(f"⚠️  Workflow failed: {failed_count} email(s) could not be processed")
+            logger.error("These emails remain UNSEEN and will be retried on the next run")
             sys.exit(1)
+
+        logger.info("✅ All emails processed successfully!")
 
     finally:
         close_imap(mail)

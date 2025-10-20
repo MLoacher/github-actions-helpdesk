@@ -81,24 +81,27 @@ def process_comment(event_data: dict, github: GitHubHelper, smtp_config: dict) -
 
     issue_number = issue['number']
     comment_body = comment['body']
+    comment_author = comment['user']['login']
 
-    logger.info(f"Processing comment on issue #{issue_number}")
+    logger.info(f"[SEND] Processing comment on issue #{issue_number} by @{comment_author}")
 
     # Parse metadata from issue body
     metadata = parse_metadata_from_issue_body(issue['body'])
 
     if not metadata:
-        logger.error(f"Could not parse metadata from issue #{issue_number}")
+        logger.error(f"❌ Could not parse metadata from issue #{issue_number} - missing helpdesk metadata")
         return False
 
     customer_email = metadata.get('from')
     if not customer_email:
-        logger.error(f"No customer email found in issue #{issue_number} metadata")
+        logger.error(f"❌ No customer email found in issue #{issue_number} metadata")
         return False
+
+    logger.info(f"📧 Sending email to customer: {customer_email}")
 
     message_ids = metadata.get('message_ids', [])
     if not message_ids:
-        logger.warning(f"No message IDs found in issue #{issue_number} metadata")
+        logger.warning(f"⚠️  No message IDs found in issue #{issue_number} metadata - threading may not work")
 
     # Generate new message ID
     new_message_id = generate_message_id()
@@ -107,6 +110,9 @@ def process_comment(event_data: dict, github: GitHubHelper, smtp_config: dict) -
     subject = f"Re: {issue['title']}"
     in_reply_to = message_ids[-1] if message_ids else ""
     references = message_ids
+
+    logger.info(f"Email subject: {subject}")
+    logger.info(f"Threading: In-Reply-To={in_reply_to[:30]}..." if in_reply_to else "Threading: First message in thread")
 
     # Send email
     success = send_email(
@@ -124,14 +130,14 @@ def process_comment(event_data: dict, github: GitHubHelper, smtp_config: dict) -
     )
 
     if success:
-        logger.info(f"Email sent to {customer_email}")
+        logger.info(f"✅ Email sent successfully to {customer_email}")
 
         # Update issue metadata with new message ID
         update_issue_metadata(issue, new_message_id, metadata, github)
 
         return True
     else:
-        logger.error(f"Failed to send email to {customer_email}")
+        logger.error(f"❌ Failed to send email to {customer_email}")
         return False
 
 
@@ -204,7 +210,7 @@ def main():
     should_skip, reason = should_skip_comment(event_data)
 
     if should_skip:
-        logger.info(f"Skipping comment: {reason}")
+        logger.info(f"⏭️  Skipping comment: {reason}")
         sys.exit(0)
 
     # Initialize GitHub helper
@@ -223,14 +229,18 @@ def main():
         success = process_comment(event_data, github, smtp_config)
 
         if success:
-            logger.info("Comment processed successfully")
+            logger.info("=" * 60)
+            logger.info("✅ Comment processed successfully - email sent to customer")
+            logger.info("=" * 60)
             sys.exit(0)
         else:
-            logger.error("Failed to process comment")
+            logger.error("=" * 60)
+            logger.error("❌ Failed to process comment - email not sent")
+            logger.error("=" * 60)
             sys.exit(1)
 
     except Exception as e:
-        logger.error(f"Error processing comment: {e}")
+        logger.error(f"❌ Unexpected error processing comment: {e}")
         sys.exit(1)
 
 

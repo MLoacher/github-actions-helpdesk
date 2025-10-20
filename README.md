@@ -1,5 +1,8 @@
 # GitHub Helpdesk - Actions Edition
 
+[![Email to GitHub](https://github.com/MLoacher/github-actions-helpdesk/actions/workflows/email-to-github.yml/badge.svg)](https://github.com/MLoacher/github-actions-helpdesk/actions/workflows/email-to-github.yml)
+[![GitHub to Email](https://github.com/MLoacher/github-actions-helpdesk/actions/workflows/github-to-email.yml/badge.svg)](https://github.com/MLoacher/github-actions-helpdesk/actions/workflows/github-to-email.yml)
+
 A serverless email-to-GitHub-issues helpdesk system that runs entirely on GitHub Actions. **No database, no server hosting, no state files** required.
 
 ## Features
