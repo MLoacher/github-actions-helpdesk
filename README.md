@@ -66,18 +66,26 @@ SMTP_USER=CarolinJerGrp@gmail.com
 PROJECT_ID=PVT_kwHOAYg_f84BFG26
 ```
 
-If you want issues to be automatically added to a GitHub Project board, add the `PROJECT_ID` variable. See [How to Get Your Project ID](#how-to-get-your-github-project-id) below.
+If you want issues to be automatically added to a GitHub Project board, add the `PROJECT_ID` variable. See [GitHub Projects Integration](#optional-github-projects-integration) below for complete setup instructions.
 
 ### 2. Configure Secrets (Sensitive Data Only)
 
 Go to repository **Settings → Secrets and variables → Actions → Secrets tab**, and add:
 
+**Required:**
 ```
 IMAP_PASSWORD=your-app-specific-password
 SMTP_PASSWORD=your-app-specific-password
 ```
 
 **Note:** For Gmail, you'll need to create an [App Password](https://support.google.com/accounts/answer/185833).
+
+**Optional - Required for GitHub Projects Integration:**
+```
+PROJECT_PAT=github_pat_xxxxxxxxxxxxxxxxxxxxx
+```
+
+If you want to use GitHub Projects integration, you **must** create a Personal Access Token (PAT) with `project` permissions. See [GitHub Projects Integration](#optional-github-projects-integration) for detailed instructions on creating the PAT.
 
 ### 3. Enable GitHub Actions
 
@@ -375,9 +383,45 @@ This gives you instant processing with a safety net!
 
 ## Optional: GitHub Projects Integration
 
-### How to Get Your GitHub Project ID
+If you want new issues to be automatically added to a GitHub Project board, follow these steps:
 
-If you want new issues to be automatically added to a GitHub Project board:
+### Step 1: Create a Personal Access Token (PAT)
+
+**Why is this needed?** Organization and user-level GitHub Projects require special permissions that the default `GITHUB_TOKEN` doesn't have. You need a Personal Access Token with `project` permissions.
+
+1. **Go to GitHub Settings**:
+   - Click your profile picture (top right) → Settings
+   - Scroll down to "Developer settings" (bottom left)
+   - Click "Personal access tokens" → "Fine-grained tokens"
+   - Click "Generate new token"
+
+2. **Configure the token**:
+   - **Token name**: `Helpdesk Project Access`
+   - **Expiration**: Choose duration (90 days, 1 year, or no expiration)
+   - **Repository access**:
+     - Select "Only select repositories"
+     - Choose the repository where your helpdesk issues are created
+
+3. **Set Permissions**:
+   - **Repository permissions**:
+     - Issues: **Read and write**
+     - Metadata: **Read-only** (auto-selected)
+   - **Account permissions** (scroll down):
+     - Projects: **Read and write**
+
+4. **Generate and copy**:
+   - Click "Generate token"
+   - **Copy the token immediately** (starts with `github_pat_`)
+   - You won't be able to see it again!
+
+5. **Add to repository secrets**:
+   - Go to your repository: Settings → Secrets and variables → Actions → Secrets
+   - Click "New repository secret"
+   - Name: `PROJECT_PAT`
+   - Value: Paste the token
+   - Click "Add secret"
+
+### Step 2: Get Your GitHub Project ID
 
 1. **Create a GitHub Project** (if you don't have one):
    - Go to your repository or organization
@@ -421,10 +465,40 @@ If you want new issues to be automatically added to a GitHub Project board:
 3. **Copy the Project ID**:
    - The ID will look like: `PVT_kwHOAYg_f84BFG26`
    - Add this to your repository variables as `PROJECT_ID`
+   - Go to: Settings → Secrets and variables → Actions → Variables tab
+   - Click "New repository variable"
+   - Name: `PROJECT_ID`
+   - Value: `PVT_kwHOAYg_f84BFG26` (your actual ID)
 
-4. **Grant Permissions**:
-   - Go to Project Settings → Manage access
-   - Ensure the repository has write access to the project
+### Step 3: Pass PROJECT_PAT to the Reusable Workflow
+
+If you're using this as a reusable workflow, you need to pass the `PROJECT_PAT` secret:
+
+**In your calling repository's workflow file:**
+```yaml
+jobs:
+  process-emails:
+    uses: MLoacher/github-actions-helpdesk/.github/workflows/email-to-github.yml@main
+    secrets:
+      IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
+      PROJECT_PAT: ${{ secrets.PROJECT_PAT }}  # Add this line!
+    with:
+      IMAP_HOST: ${{ vars.IMAP_HOST }}
+      IMAP_PORT: ${{ vars.IMAP_PORT }}
+      IMAP_USER: ${{ vars.IMAP_USER }}
+      PROJECT_ID: ${{ vars.PROJECT_ID }}
+```
+
+### Troubleshooting
+
+**Error: "Resource not accessible by integration"**
+- This means you're missing the `PROJECT_PAT` or it doesn't have the right permissions
+- Create a new PAT following Step 1 above
+- Ensure the PAT has `Projects: Read and write` permission
+
+**Error: "Could not resolve to a node with the global id"**
+- Your `PROJECT_ID` is incorrect
+- Follow Step 2 to get the correct Project ID
 
 Once configured, all new helpdesk issues will automatically appear in your project board!
 

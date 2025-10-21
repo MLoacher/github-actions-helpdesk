@@ -8,6 +8,9 @@ on:
       SMTP_PASSWORD:
         required: false
         description: "SMTP password (not used in email-to-github)"
+      PROJECT_PAT:
+        required: false
+        description: "Personal Access Token with project permissions (required for org/user-level projects)"
     inputs:
       IMAP_HOST:
         required: true
@@ -34,6 +37,9 @@ on:
 jobs:
   process-emails:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
 
     steps:
       - name: Checkout helpdesk scripts
@@ -59,7 +65,7 @@ jobs:
           IMAP_PORT: ${{ inputs.IMAP_PORT }}
           IMAP_USER: ${{ inputs.IMAP_USER }}
           IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PROJECT_PAT || secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PROJECT_ID: ${{ inputs.PROJECT_ID }}
         run: |

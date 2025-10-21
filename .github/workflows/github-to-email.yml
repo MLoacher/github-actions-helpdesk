@@ -8,6 +8,9 @@ on:
       IMAP_PASSWORD:
         required: false
         description: "IMAP password (not used in github-to-email)"
+      PROJECT_PAT:
+        required: false
+        description: "Personal Access Token with project permissions (required for org/user-level projects)"
     inputs:
       SMTP_HOST:
         required: true
@@ -34,6 +37,9 @@ on:
 jobs:
   send-email:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
 
     # Only run if the issue has the helpdesk label
     if: contains(github.event.issue.labels.*.name, 'helpdesk')
@@ -62,7 +68,7 @@ jobs:
           SMTP_PORT: ${{ inputs.SMTP_PORT }}
           SMTP_USER: ${{ inputs.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PROJECT_PAT || secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: |
