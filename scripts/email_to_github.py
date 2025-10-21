@@ -126,7 +126,9 @@ def create_new_issue(email_msg, from_email: str, github: GitHubHelper, project_i
         # Add to project if project_id is provided
         if project_id and issue_node_id:
             logger.info(f"📋 Adding issue #{actual_number} to GitHub Project")
-            github.add_issue_to_project(issue_node_id, project_id)
+            if not github.add_issue_to_project(issue_node_id, project_id):
+                logger.error(f"❌ Failed to add issue #{actual_number} to project {project_id}")
+                return False
 
         return True
     else:
