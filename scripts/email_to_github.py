@@ -65,7 +65,7 @@ def process_email(email_msg, github: GitHubHelper, project_id: str = None) -> bo
     else:
         # Try to find existing issue by email metadata
         logger.info(f"[NEW/REPLY] No {ticket_prefix} number in subject, searching by thread metadata...")
-        existing_issue = find_issue_by_thread(email_msg, from_email, github)
+        existing_issue = find_issue_by_thread(email_msg, github)
 
         if existing_issue:
             logger.info(f"[REPLY] Found existing issue #{existing_issue['number']} by thread ID, adding comment")
@@ -190,27 +190,29 @@ def handle_reply(email_msg, issue_number: int, from_email: str, github: GitHubHe
         return False
 
 
-def find_issue_by_thread(email_msg, from_email: str, github: GitHubHelper) -> Optional[dict]:
+def find_issue_by_thread(email_msg, github: GitHubHelper) -> Optional[dict]:
     """
     Find existing issue by checking thread metadata.
 
+    Searches ALL open helpdesk issues and matches by email Message-ID threading headers.
+    This is more reliable than matching by customer email label alone.
+
     Args:
         email_msg: EmailMessage object
-        from_email: Sender email address
         github: GitHubHelper instance
 
     Returns:
         Issue dict or None
     """
-    # Search for ALL open issues from this customer
-    query = f"label:helpdesk label:from:{from_email} is:open"
+    # Search for ALL open helpdesk issues
+    query = "label:helpdesk is:open"
     issues = github.search_issues(query)
 
     if not issues:
-        logger.debug(f"No open issues found for {from_email}")
+        logger.debug("No open helpdesk issues found")
         return None
 
-    logger.info(f"Found {len(issues)} open issue(s) for {from_email}, checking threading...")
+    logger.info(f"Searching {len(issues)} open helpdesk issue(s) for matching email thread...")
 
     # Check each issue to find the one with matching message IDs
     for issue in issues:
@@ -218,7 +220,6 @@ def find_issue_by_thread(email_msg, from_email: str, github: GitHubHelper) -> Op
         metadata = parse_metadata_from_issue_body(issue['body'])
 
         if not metadata:
-            logger.debug(f"Could not parse metadata from issue #{issue['number']}, skipping")
             continue
 
         stored_message_ids = metadata.get('message_ids', [])
@@ -234,9 +235,9 @@ def find_issue_by_thread(email_msg, from_email: str, github: GitHubHelper) -> Op
                 return issue
 
     # No threading match found
-    logger.warning(f"Email threading headers don't match any of the {len(issues)} open issue(s)")
-    logger.warning(f"Email In-Reply-To: {email_msg.in_reply_to}")
-    logger.warning(f"Email References: {email_msg.references}")
+    logger.debug(f"Email threading headers don't match any open issues")
+    logger.debug(f"Email In-Reply-To: {email_msg.in_reply_to}")
+    logger.debug(f"Email References: {email_msg.references}")
     return None
 
 
