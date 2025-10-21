@@ -13,6 +13,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class Attachment:
+    """Represents an email attachment."""
+
+    def __init__(self):
+        self.filename: str = ""
+        self.content_type: str = ""
+        self.size: int = 0
+        self.data: bytes = b""
+
+
 class EmailMessage:
     """Represents a parsed email message."""
 
@@ -27,6 +37,7 @@ class EmailMessage:
         self.references: List[str] = []
         self.date: str = ""
         self.uid: str = ""
+        self.attachments: List[Attachment] = []
 
 
 def connect_imap(host: str, port: int, user: str, password: str) -> imaplib.IMAP4_SSL:
@@ -120,8 +131,9 @@ def fetch_email_by_id(mail: imaplib.IMAP4_SSL, email_id: bytes) -> Optional[Emai
     if references:
         parsed.references = references.split()
 
-    # Parse body
+    # Parse body and attachments
     parsed.body, parsed.html_body = extract_email_body(msg)
+    parsed.attachments = extract_attachments(msg)
 
     return parsed
 
@@ -149,6 +161,57 @@ def decode_email_header(header: str) -> str:
             decoded_str += part
 
     return decoded_str
+
+
+def extract_attachments(msg: email.message.Message) -> List[Attachment]:
+    """
+    Extract attachments from email.
+
+    Args:
+        msg: Email message object
+
+    Returns:
+        List of Attachment objects
+    """
+    attachments = []
+
+    if msg.is_multipart():
+        for part in msg.walk():
+            content_disposition = str(part.get("Content-Disposition", ""))
+
+            # Check if this is an attachment
+            if "attachment" in content_disposition or part.get_filename():
+                try:
+                    filename = part.get_filename()
+                    if not filename:
+                        continue
+
+                    # Decode filename if needed
+                    filename = decode_email_header(filename)
+
+                    # Get content type
+                    content_type = part.get_content_type()
+
+                    # Get attachment data
+                    data = part.get_payload(decode=True)
+                    if not data:
+                        continue
+
+                    # Create attachment object
+                    attachment = Attachment()
+                    attachment.filename = filename
+                    attachment.content_type = content_type
+                    attachment.size = len(data)
+                    attachment.data = data
+
+                    attachments.append(attachment)
+                    logger.info(f"Found attachment: {filename} ({content_type}, {len(data)} bytes)")
+
+                except Exception as e:
+                    logger.warning(f"Error extracting attachment: {e}")
+                    continue
+
+    return attachments
 
 
 def extract_email_body(msg: email.message.Message) -> Tuple[str, str]:

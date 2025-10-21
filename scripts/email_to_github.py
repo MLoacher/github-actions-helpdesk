@@ -76,6 +76,53 @@ def process_email(email_msg, github: GitHubHelper, project_id: str = None) -> bo
             return create_new_issue(email_msg, from_email, github, project_id)
 
 
+def process_attachments(attachments, github: GitHubHelper, issue_number: int = None) -> str:
+    """
+    Process email attachments: upload images and list non-images.
+
+    Args:
+        attachments: List of Attachment objects
+        github: GitHubHelper instance
+        issue_number: Issue number (for logging)
+
+    Returns:
+        Markdown string with embedded images and attachment list
+    """
+    if not attachments:
+        return ""
+
+    # Separate images from other files
+    image_types = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp', 'image/webp']
+    images = [att for att in attachments if att.content_type in image_types]
+    other_files = [att for att in attachments if att.content_type not in image_types]
+
+    sections = []
+
+    # Upload and embed images
+    if images:
+        sections.append("### 📷 Attached Images\n")
+        for img in images:
+            image_url = github.upload_image(img.data, img.filename)
+            if image_url:
+                sections.append(f"![{img.filename}]({image_url})\n")
+                logger.info(f"✅ Embedded image: {img.filename}")
+            else:
+                sections.append(f"❌ Failed to upload image: {img.filename}\n")
+                logger.warning(f"Failed to upload image: {img.filename}")
+
+    # List non-image attachments with internal note
+    if other_files:
+        sections.append("### 📎 Other Attachments\n")
+        sections.append("<!-- internal -->\n")
+        sections.append("**Note for support team:** The following attachments could not be embedded. Please check the original email in your inbox to access these files.\n\n")
+        for file in other_files:
+            size_kb = file.size / 1024
+            sections.append(f"- `{file.filename}` ({size_kb:.1f} KB, {file.content_type})\n")
+        sections.append("\n<!-- /internal -->\n")
+
+    return "\n".join(sections)
+
+
 def create_new_issue(email_msg, from_email: str, github: GitHubHelper, project_id: str = None) -> bool:
     """
     Create a new GitHub issue from email.
@@ -102,6 +149,9 @@ def create_new_issue(email_msg, from_email: str, github: GitHubHelper, project_i
     body_text = email_msg.body if email_msg.body else email_msg.html_body
     clean_body = sanitize_email_body(body_text)
 
+    # Process attachments
+    attachments_section = process_attachments(email_msg.attachments, github, issue_number)
+
     # Create metadata comment
     metadata = format_metadata_comment(
         thread_id=email_msg.message_id,
@@ -109,8 +159,8 @@ def create_new_issue(email_msg, from_email: str, github: GitHubHelper, project_i
         message_ids=[email_msg.message_id]
     )
 
-    # Combine body with metadata
-    full_body = f"{clean_body}\n\n{metadata}"
+    # Combine body with attachments and metadata
+    full_body = f"{clean_body}\n\n{attachments_section}\n\n{metadata}" if attachments_section else f"{clean_body}\n\n{metadata}"
 
     # Create labels
     labels = ["helpdesk", f"from:{from_email}"]
@@ -171,9 +221,12 @@ def handle_reply(email_msg, issue_number: int, from_email: str, github: GitHubHe
     body_text = email_msg.body if email_msg.body else email_msg.html_body
     clean_body = sanitize_email_body(body_text)
 
+    # Process attachments
+    attachments_section = process_attachments(email_msg.attachments, github, issue_number)
+
     # Add email marker
     email_marker = create_email_marker()
-    comment_body = f"{clean_body}\n\n{email_marker}"
+    comment_body = f"{clean_body}\n\n{attachments_section}\n\n{email_marker}" if attachments_section else f"{clean_body}\n\n{email_marker}"
 
     # Add comment
     comment = github.add_comment(issue_number, comment_body)

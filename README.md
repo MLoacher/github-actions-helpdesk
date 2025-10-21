@@ -148,13 +148,27 @@ The workflows will start running based on your chosen triggers.
 
 1. **View tickets**: Check the GitHub Issues page
    - Filter by `label:helpdesk` to see all support tickets
+   - Images from customer emails are embedded inline
+   - Non-image attachments show a note to check the original email
 
-2. **Reply to customers**: Add a comment to the issue
-   - Your comment will be automatically emailed to the customer
+2. **Reply to customers**: Add a comment mentioning the customer bot
+   - **To send to customer**: Mention `@customer-bot` in your comment
+   - **Internal discussion**: Comments without @mention stay internal (not sent)
    - Email threading is preserved
 
 3. **Close tickets**: Close the issue when resolved
    - Future emails from the customer will reopen it automatically
+
+### Attachment Handling
+
+**Images (PNG, JPG, GIF):**
+- ✅ Automatically uploaded to GitHub and embedded inline in the issue
+- Customer and team can see them directly
+
+**Other files (PDF, DOCX, ZIP, etc.):**
+- ⚠️ Listed in issue with a note for support team
+- Team must check original email inbox to access these files
+- Not sent back to customer in replies
 
 ## How It Works
 
@@ -166,6 +180,9 @@ The workflows will start running based on your chosen triggers.
    - Checks for `[GH-####]` token in subject
    - If found, adds comment to existing issue
    - If not found, searches by email metadata or creates new issue
+   - **Processes attachments:**
+     - Images: Uploaded to GitHub and embedded inline
+     - Other files: Listed with note to check original email
    - Embeds email metadata in issue body (HTML comment)
    - Marks email as SEEN
 

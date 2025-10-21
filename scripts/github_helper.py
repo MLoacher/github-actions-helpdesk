@@ -308,3 +308,46 @@ class GitHubHelper:
         except requests.exceptions.RequestException as e:
             logger.error(f"Error adding issue to project: {e}")
             return False
+
+    def upload_image(self, image_data: bytes, filename: str) -> Optional[str]:
+        """
+        Upload an image to GitHub's asset server.
+
+        Uses an unofficial GitHub endpoint that allows uploading images
+        that can be referenced in issues/comments.
+
+        Args:
+            image_data: Image binary data
+            filename: Image filename
+
+        Returns:
+            URL of uploaded image, or None if failed
+        """
+        url = f"{self.base_url}/repos/{self.repository}/issues/assets"
+
+        headers = {
+            "Authorization": f"token {self.token}",
+            "Content-Type": "application/octet-stream"
+        }
+
+        params = {"name": filename}
+
+        try:
+            logger.info(f"Uploading image: {filename} ({len(image_data)} bytes)")
+            response = requests.post(
+                url,
+                data=image_data,
+                headers=headers,
+                params=params
+            )
+            response.raise_for_status()
+            result = response.json()
+
+            # GitHub returns the URL in the response
+            image_url = result.get('url') or result.get('browser_download_url')
+            logger.info(f"Image uploaded successfully: {image_url}")
+            return image_url
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error uploading image {filename}: {e}")
+            return None
