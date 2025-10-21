@@ -172,9 +172,12 @@ The workflows will start running based on your chosen triggers.
 - Click the link to download/view the file
 - Stored in the same `attachments/` folder
 
-**Note:** Attachments are committed to your repository. If you want to exclude them from your main branch, you can:
-1. Create a separate branch for attachments
-2. Or add `attachments/` to `.gitignore` (though files are already uploaded via API)
+**Storage Notes:**
+- Attachments are committed directly to your repository via GitHub API
+- **Git LFS Compatible**: Files bypass Git LFS even if configured (uploaded via API, not git commands)
+- Repository size: GitHub recommends keeping repos under 1GB (see [GitHub Docs](https://docs.github.com/en/repositories/working-with-large-files/about-large-files-on-github))
+- Individual file limit: 50MB warning, 100MB hard limit per file
+- For high-volume helpdesks, consider periodic cleanup of old attachment folders
 
 ## How It Works
 
