@@ -29,3 +29,4 @@ jobs:
       SMTP_PORT: ${{ vars.SMTP_PORT }}
       SMTP_USER: ${{ vars.SMTP_USER }}
       # PROJECT_ID: ${{ vars.PROJECT_ID }}  # Optional: Add if using GitHub Projects integration
+      # TICKET_PREFIX: "TICKET"  # Optional: Default is "GH" (creates [GH-0001], [TICKET-0001], etc.)

@@ -33,6 +33,11 @@ on:
       PROJECT_ID:
         required: false
         type: string
+      TICKET_PREFIX:
+        required: false
+        type: string
+        default: "GH"
+        description: "Ticket prefix for issue titles (e.g., 'GH', 'TICKET', 'SUP')"
 
 jobs:
   process-emails:
@@ -68,5 +73,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PROJECT_PAT || secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PROJECT_ID: ${{ inputs.PROJECT_ID }}
+          TICKET_PREFIX: ${{ inputs.TICKET_PREFIX }}
         run: |
           python helpdesk-scripts/scripts/email_to_github.py

@@ -52,16 +52,19 @@ def process_email(email_msg, github: GitHubHelper, project_id: str = None) -> bo
     from_email = parse_email_address(email_msg.from_addr)
     logger.info(f"Sender email: {from_email}")
 
+    # Get ticket prefix from environment
+    ticket_prefix = os.getenv('TICKET_PREFIX', 'GH')
+
     # Check if this is a reply to an existing ticket
     gh_number = extract_gh_number_from_subject(email_msg.subject)
 
     if gh_number:
         # Reply to existing issue
-        logger.info(f"[REPLY] Found GH-{gh_number} in subject, adding comment to existing issue")
+        logger.info(f"[REPLY] Found {ticket_prefix}-{gh_number} in subject, adding comment to existing issue")
         return handle_reply(email_msg, gh_number, from_email, github)
     else:
         # Try to find existing issue by email metadata
-        logger.info("[NEW/REPLY] No GH number in subject, searching by thread metadata...")
+        logger.info(f"[NEW/REPLY] No {ticket_prefix} number in subject, searching by thread metadata...")
         existing_issue = find_issue_by_thread(email_msg, from_email, github)
 
         if existing_issue:
@@ -86,10 +89,13 @@ def create_new_issue(email_msg, from_email: str, github: GitHubHelper, project_i
     Returns:
         True if successful
     """
+    # Get ticket prefix from environment
+    ticket_prefix = os.getenv('TICKET_PREFIX', 'GH')
+
     # Get next issue number (prediction)
     issue_number = github.get_next_issue_number()
 
-    # Format title with GH number
+    # Format title with ticket number
     title = format_issue_title(issue_number, email_msg.subject)
 
     # Sanitize body
@@ -121,7 +127,7 @@ def create_new_issue(email_msg, from_email: str, github: GitHubHelper, project_i
         if actual_number != issue_number:
             correct_title = format_issue_title(actual_number, email_msg.subject)
             github.update_issue(actual_number, title=correct_title)
-            logger.info(f"Updated title to use correct issue number: [GH-{actual_number:04d}]")
+            logger.info(f"Updated title to use correct issue number: [{ticket_prefix}-{actual_number:04d}]")
 
         # Add to project if project_id is provided
         if project_id and issue_node_id:

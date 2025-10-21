@@ -1,5 +1,6 @@
 """Shared utilities for parsing and formatting helpdesk data."""
 
+import os
 import re
 from typing import Optional, Dict, List
 
@@ -70,39 +71,52 @@ message_ids: {message_ids_json}
 -->"""
 
 
-def extract_gh_number_from_subject(subject: str) -> Optional[int]:
+def extract_gh_number_from_subject(subject: str, prefix: str = None) -> Optional[int]:
     """
     Extract GitHub issue number from subject line.
 
     Args:
         subject: Email subject line (e.g., "Re: [GH-0042] Login issue")
+        prefix: Ticket prefix (e.g., "GH", "TICKET"). Defaults to TICKET_PREFIX env var or "GH"
 
     Returns:
         Issue number as integer, or None if not found
     """
-    match = re.search(r'\[GH-(\d+)\]', subject)
+    if prefix is None:
+        prefix = os.getenv('TICKET_PREFIX', 'GH')
+
+    # Escape prefix for regex in case it contains special characters
+    escaped_prefix = re.escape(prefix)
+    match = re.search(rf'\[{escaped_prefix}-(\d+)\]', subject)
     if match:
         return int(match.group(1))
     return None
 
 
-def format_issue_title(issue_number: int, subject: str) -> str:
+def format_issue_title(issue_number: int, subject: str, prefix: str = None) -> str:
     """
-    Format issue title with GH number prefix.
+    Format issue title with ticket number prefix.
 
     Args:
         issue_number: GitHub issue number
         subject: Email subject line
+        prefix: Ticket prefix (e.g., "GH", "TICKET"). Defaults to TICKET_PREFIX env var or "GH"
 
     Returns:
-        Formatted title like "[GH-0042] Subject"
+        Formatted title like "[GH-0042] Subject" or "[TICKET-0042] Subject"
     """
-    # Remove any existing [GH-####] prefix
-    clean_subject = re.sub(r'\[GH-\d+\]\s*', '', subject)
+    if prefix is None:
+        prefix = os.getenv('TICKET_PREFIX', 'GH')
+
+    # Remove any existing [PREFIX-####] prefix
+    escaped_prefix = re.escape(prefix)
+    clean_subject = re.sub(rf'\[{escaped_prefix}-\d+\]\s*', '', subject)
+    # Also remove old GH prefix if switching prefixes
+    clean_subject = re.sub(r'\[GH-\d+\]\s*', '', clean_subject)
     # Remove Re:, Fwd:, etc.
     clean_subject = re.sub(r'^(Re:|RE:|Fwd:|FW:)\s*', '', clean_subject, flags=re.IGNORECASE)
 
-    return f"[GH-{issue_number:04d}] {clean_subject.strip()}"
+    return f"[{prefix}-{issue_number:04d}] {clean_subject.strip()}"
 
 
 def sanitize_email_body(body: str) -> str:

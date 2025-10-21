@@ -33,3 +33,4 @@ jobs:
       IMAP_PORT: ${{ vars.IMAP_PORT }}
       IMAP_USER: ${{ vars.IMAP_USER }}
       # PROJECT_ID: ${{ vars.PROJECT_ID }}  # Optional: Add if using GitHub Projects integration
+      # TICKET_PREFIX: "TICKET"  # Optional: Default is "GH" (creates [GH-0001], [TICKET-0001], etc.)

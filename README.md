@@ -68,6 +68,13 @@ PROJECT_ID=PVT_kwHOAYg_f84BFG26
 
 If you want issues to be automatically added to a GitHub Project board, add the `PROJECT_ID` variable. See [GitHub Projects Integration](#optional-github-projects-integration) below for complete setup instructions.
 
+**Optional - Custom Ticket Prefix:**
+```
+TICKET_PREFIX=TICKET
+```
+
+By default, issues are created with `[GH-0001]` format. You can customize the prefix (e.g., `TICKET`, `SUP`, `HD`) to create `[TICKET-0001]`, `[SUP-0001]`, etc. If not set, defaults to `GH`.
+
 ### 2. Configure Secrets (Sensitive Data Only)
 
 Go to repository **Settings → Secrets and variables → Actions → Secrets tab**, and add:
