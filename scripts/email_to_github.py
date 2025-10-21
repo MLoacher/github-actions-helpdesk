@@ -206,22 +206,36 @@ def find_issue_by_thread(email_msg, from_email: str, github: GitHubHelper) -> Op
     issue = github.find_issue_by_email(from_email)
 
     if not issue:
+        logger.debug(f"No open issue found for {from_email}")
         return None
+
+    logger.info(f"Found open issue #{issue['number']} for {from_email}, checking threading...")
 
     # Verify this is the right thread by checking In-Reply-To or References
     metadata = parse_metadata_from_issue_body(issue['body'])
 
     if not metadata:
+        logger.warning(f"Could not parse metadata from issue #{issue['number']}")
         return None
 
+    # Debug logging
+    stored_message_ids = metadata.get('message_ids', [])
+    logger.info(f"Stored message IDs in issue: {stored_message_ids}")
+    logger.info(f"Email In-Reply-To: {email_msg.in_reply_to}")
+    logger.info(f"Email References: {email_msg.references}")
+
     # Check if email references any message IDs in our metadata
-    if email_msg.in_reply_to in metadata.get('message_ids', []):
+    if email_msg.in_reply_to in stored_message_ids:
+        logger.info(f"✓ Matched by In-Reply-To header")
         return issue
 
     for ref in email_msg.references:
-        if ref in metadata.get('message_ids', []):
+        if ref in stored_message_ids:
+            logger.info(f"✓ Matched by References header: {ref}")
             return issue
 
+    logger.warning(f"Email threading headers don't match any stored message IDs")
+    logger.warning(f"This might be a new email from the same customer, not a reply")
     return None
 
 
