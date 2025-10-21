@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/Repos/helpdesk/**)"
+      "Read(//c/Repos/helpdesk/**)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": []

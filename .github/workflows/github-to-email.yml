@@ -50,11 +50,11 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
-          cache-dependency-path: helpdesk-scripts/requirements.txt
+          cache-dependency-path: helpdesk-scripts/scripts/requirements.txt
 
       - name: Install dependencies
         run: |
-          pip install -r helpdesk-scripts/requirements.txt
+          pip install -r helpdesk-scripts/scripts/requirements.txt
 
       - name: Send email
         env:

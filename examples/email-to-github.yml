@@ -9,10 +9,10 @@ name: Email to GitHub Helpdesk
 
 on:
   # Schedule: Adjust frequency as needed
-  schedule:
-    - cron: '0 */6 * * *'  # Every 6 hours
+  # schedule:
+  #   - cron: '*/5 * * * *'  # Every 5 Minutes
 
-  # Webhook trigger
+  # Webhook trigger (recommended)
   repository_dispatch:
 
   # Manual trigger
