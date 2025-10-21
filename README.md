@@ -61,19 +61,14 @@ SMTP_PORT=587
 SMTP_USER=CarolinJerGrp@gmail.com
 ```
 
-**Optional - GitHub Project Integration:**
+**Optional:**
 ```
+TICKET_PREFIX=GH
 PROJECT_ID=PVT_kwHOAYg_f84BFG26
 ```
 
-If you want issues to be automatically added to a GitHub Project board, add the `PROJECT_ID` variable. See [GitHub Projects Integration](#optional-github-projects-integration) below for complete setup instructions.
-
-**Optional - Custom Ticket Prefix:**
-```
-TICKET_PREFIX=TICKET
-```
-
-By default, issues are created with `[GH-0001]` format. You can customize the prefix (e.g., `TICKET`, `SUP`, `HD`) to create `[TICKET-0001]`, `[SUP-0001]`, etc. If not set, defaults to `GH`.
+- **`TICKET_PREFIX`**: Customize the ticket number format in issue titles. Default is `GH` (creates `[GH-0001]`). You can use any prefix like `TICKET`, `SUP`, `HD` to create `[TICKET-0001]`, `[SUP-0001]`, etc.
+- **`PROJECT_ID`**: If you want issues automatically added to a GitHub Project board. See [GitHub Projects Integration](#optional-github-projects-integration) below for setup instructions.
 
 ### 2. Configure Secrets (Sensitive Data Only)
 
