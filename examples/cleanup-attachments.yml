@@ -19,12 +19,16 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: write
+  issues: read
+
 jobs:
   cleanup:
-    uses: anthropics/github-helpdesk-actions/.github/workflows/cleanup-attachments.yml@main
+    uses: MLoacher/github-actions-helpdesk/.github/workflows/cleanup-attachments.yml@main
     with:
       # Delete attachments from issues closed more than 6 months ago
-      DAYS_OLD: ${{ inputs.days_old || vars.CLEANUP_DAYS_OLD || 180 }}
+      DAYS_OLD: ${{ fromJSON(inputs.days_old || vars.CLEANUP_DAYS_OLD || '180') }}
 
       # Set to true to preview what would be deleted
       DRY_RUN: ${{ inputs.dry_run || false }}
