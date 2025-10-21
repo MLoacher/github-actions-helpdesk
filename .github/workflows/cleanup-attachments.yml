@@ -65,10 +65,6 @@ jobs:
             echo "No changes to commit"
           else
             git add -A
-            git commit -m "Clean up attachments from issues closed more than ${{ inputs.DAYS_OLD }} days ago
-
-          🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-          Co-Authored-By: Claude <noreply@anthropic.com>"
+            git commit -m "Clean up attachments from issues closed more than ${{ inputs.DAYS_OLD }} days ago"
             git push
           fi
