@@ -18,13 +18,18 @@ on:
   # Manual trigger
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   process-emails:
     uses: MLoacher/github-helpdesk-actions/.github/workflows/email-to-github.yml@main
     secrets:
       IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
+      # PROJECT_PAT: ${{ secrets.PROJECT_PAT }}  # Optional: Required only if using GitHub Projects integration
     with:
       IMAP_HOST: ${{ vars.IMAP_HOST }}
       IMAP_PORT: ${{ vars.IMAP_PORT }}
       IMAP_USER: ${{ vars.IMAP_USER }}
-      PROJECT_ID: ${{ vars.PROJECT_ID }}  # Optional
+      # PROJECT_ID: ${{ vars.PROJECT_ID }}  # Optional: Add if using GitHub Projects integration

@@ -11,6 +11,10 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   send-email:
     # Only run if the issue has the helpdesk label
@@ -19,7 +23,9 @@ jobs:
     uses: MLoacher/github-helpdesk-actions/.github/workflows/github-to-email.yml@main
     secrets:
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      # PROJECT_PAT: ${{ secrets.PROJECT_PAT }}  # Optional: Required only if using GitHub Projects integration
     with:
       SMTP_HOST: ${{ vars.SMTP_HOST }}
       SMTP_PORT: ${{ vars.SMTP_PORT }}
       SMTP_USER: ${{ vars.SMTP_USER }}
+      # PROJECT_ID: ${{ vars.PROJECT_ID }}  # Optional: Add if using GitHub Projects integration
