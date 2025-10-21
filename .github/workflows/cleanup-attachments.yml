@@ -25,7 +25,7 @@ jobs:
       - name: Checkout helpdesk scripts
         uses: actions/checkout@v4
         with:
-          repository: anthropics/github-helpdesk-actions
+          repository: MLoacher/github-actions-helpdesk
           ref: main
           path: helpdesk-scripts
 
