@@ -1,0 +1,74 @@
+name: Cleanup Attachments
+
+on:
+  workflow_call:
+    inputs:
+      DAYS_OLD:
+        required: false
+        type: number
+        default: 180
+        description: "Delete attachments from issues closed more than X days ago"
+      DRY_RUN:
+        required: false
+        type: boolean
+        default: false
+        description: "Preview what would be deleted without actually deleting"
+
+jobs:
+  cleanup-attachments:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+
+    steps:
+      - name: Checkout helpdesk scripts
+        uses: actions/checkout@v4
+        with:
+          repository: anthropics/github-helpdesk-actions
+          ref: main
+          path: helpdesk-scripts
+
+      - name: Checkout repository with attachments
+        uses: actions/checkout@v4
+        with:
+          path: repo
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r helpdesk-scripts/scripts/requirements.txt
+
+      - name: Run cleanup script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DAYS_OLD: ${{ inputs.DAYS_OLD }}
+          DRY_RUN: ${{ inputs.DRY_RUN }}
+        run: |
+          cd repo
+          python ../helpdesk-scripts/scripts/cleanup_attachments.py
+
+      - name: Commit and push deletions
+        if: ${{ inputs.DRY_RUN == false }}
+        run: |
+          cd repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git add -A
+            git commit -m "Clean up attachments from issues closed more than ${{ inputs.DAYS_OLD }} days ago
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+          Co-Authored-By: Claude <noreply@anthropic.com>"
+            git push
+          fi

@@ -37,12 +37,18 @@ A serverless email-to-GitHub-issues helpdesk system that runs entirely on GitHub
    - Scheduled: Every 5-15 minutes
    - Fetches UNSEEN emails via IMAP
    - Creates new issues or adds comments to existing ones
+   - Processes and stores email attachments
    - Marks emails as SEEN to prevent reprocessing
 
 2. **GitHub → Email** (`.github/workflows/github-to-email.yml`)
    - Event-driven: Triggers on issue comments
    - Sends team responses back to customers via SMTP
    - Maintains proper email threading
+
+3. **Cleanup Attachments** (`.github/workflows/cleanup-attachments.yml`) - Optional
+   - Scheduled: Weekly (configurable)
+   - Deletes attachments from old closed issues
+   - Helps manage repository size and Git LFS storage
 
 ## Setup
 
@@ -200,6 +206,64 @@ To avoid repository bloat from large attachments, enable Git LFS in your reposit
 - Free/Pro: 10 GB storage + 10 GB bandwidth/month
 - Team/Enterprise: 250 GB storage + 250 GB bandwidth/month
 - Overage: $0.07/GB storage, $0.0875/GB bandwidth
+
+### Managing Storage: Automatic Cleanup
+
+To prevent unlimited growth of attachment storage, you can set up automatic cleanup of old attachments.
+
+**3. Attachment Cleanup** (`.github/workflows/cleanup-attachments.yml`) - Optional
+   - Scheduled: Weekly (configurable)
+   - Deletes attachments from issues closed more than X days ago
+   - Helps manage Git LFS storage limits
+   - Supports dry-run mode for preview
+
+**Setup:**
+
+Create `.github/workflows/cleanup-attachments.yml` in your repository:
+
+```yaml
+name: Cleanup Old Attachments
+
+on:
+  # Run every Sunday at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * 0'
+
+  # Allow manual trigger with options
+  workflow_dispatch:
+    inputs:
+      days_old:
+        description: 'Delete attachments from issues closed more than X days ago'
+        required: false
+        default: '180'
+      dry_run:
+        description: 'Preview deletions without actually deleting'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  cleanup:
+    uses: anthropics/github-helpdesk-actions/.github/workflows/cleanup-attachments.yml@main
+    with:
+      DAYS_OLD: ${{ inputs.days_old || vars.CLEANUP_DAYS_OLD || 180 }}
+      DRY_RUN: ${{ inputs.dry_run || false }}
+```
+
+**Configuration:**
+
+- `DAYS_OLD`: Delete attachments from issues closed more than X days ago (default: 180 days / 6 months)
+- `DRY_RUN`: Set to `true` to preview what would be deleted without actually deleting
+
+**Optional Variable:**
+- Add `CLEANUP_DAYS_OLD` repository variable to set default cleanup age (Settings → Variables)
+
+**Testing:**
+1. First run with `DRY_RUN: true` to preview deletions
+2. Check the Actions log to see what would be deleted
+3. Set `DRY_RUN: false` to actually delete files
+
+**Note:** Files deleted from git are reclaimed by GitHub's LFS storage after ~30 days automatically.
 
 ## How It Works
 

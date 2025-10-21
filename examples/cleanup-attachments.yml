@@ -1,0 +1,30 @@
+name: Cleanup Old Attachments
+
+on:
+  # Run every Sunday at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * 0'
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      days_old:
+        description: 'Delete attachments from issues closed more than X days ago'
+        required: false
+        default: '180'
+        type: string
+      dry_run:
+        description: 'Preview deletions without actually deleting'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  cleanup:
+    uses: anthropics/github-helpdesk-actions/.github/workflows/cleanup-attachments.yml@main
+    with:
+      # Delete attachments from issues closed more than 6 months ago
+      DAYS_OLD: ${{ inputs.days_old || vars.CLEANUP_DAYS_OLD || 180 }}
+
+      # Set to true to preview what would be deleted
+      DRY_RUN: ${{ inputs.dry_run || false }}
