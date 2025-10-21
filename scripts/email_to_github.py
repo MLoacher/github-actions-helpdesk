@@ -102,23 +102,27 @@ def process_attachments(attachments, github: GitHubHelper, issue_number: int = N
     if images:
         sections.append("### 📷 Attached Images\n")
         for img in images:
-            image_url = github.upload_image(img.data, img.filename)
-            if image_url:
-                sections.append(f"![{img.filename}]({image_url})\n")
+            file_url = github.upload_attachment_to_repo(img.data, img.filename, issue_number)
+            if file_url:
+                sections.append(f"![{img.filename}]({file_url})\n")
                 logger.info(f"✅ Embedded image: {img.filename}")
             else:
-                sections.append(f"❌ Failed to upload image: {img.filename}\n")
-                logger.warning(f"Failed to upload image: {img.filename}")
+                # Fallback: add to other_files list if upload failed
+                logger.warning(f"Failed to upload image: {img.filename}, adding to file list")
+                other_files.append(img)
 
-    # List non-image attachments with internal note
+    # Upload and link non-image attachments
     if other_files:
         sections.append("### 📎 Other Attachments\n")
-        sections.append("<!-- internal -->\n")
-        sections.append("**Note for support team:** The following attachments could not be embedded. Please check the original email in your inbox to access these files.\n\n")
         for file in other_files:
             size_kb = file.size / 1024
-            sections.append(f"- `{file.filename}` ({size_kb:.1f} KB, {file.content_type})\n")
-        sections.append("\n<!-- /internal -->\n")
+            file_url = github.upload_attachment_to_repo(file.data, file.filename, issue_number)
+            if file_url:
+                sections.append(f"- [{file.filename}]({file_url}) ({size_kb:.1f} KB)\n")
+                logger.info(f"✅ Uploaded attachment: {file.filename}")
+            else:
+                sections.append(f"- `{file.filename}` ({size_kb:.1f} KB) - ⚠️ Upload failed, check original email\n")
+                logger.warning(f"Failed to upload attachment: {file.filename}")
 
     return "\n".join(sections)
 

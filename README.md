@@ -161,14 +161,20 @@ The workflows will start running based on your chosen triggers.
 
 ### Attachment Handling
 
-**Images (PNG, JPG, GIF):**
-- ✅ Automatically uploaded to GitHub and embedded inline in the issue
-- Customer and team can see them directly
+**All attachments** are automatically uploaded to the repository in `attachments/issue-{number}/` folder:
+
+**Images (PNG, JPG, GIF, BMP, WEBP):**
+- ✅ Uploaded to repository and embedded inline in the issue
+- Displayed directly in the issue for easy viewing
 
 **Other files (PDF, DOCX, ZIP, etc.):**
-- ⚠️ Listed in issue with a note for support team
-- Team must check original email inbox to access these files
-- Not sent back to customer in replies
+- ✅ Uploaded to repository and linked in the issue
+- Click the link to download/view the file
+- Stored in the same `attachments/` folder
+
+**Note:** Attachments are committed to your repository. If you want to exclude them from your main branch, you can:
+1. Create a separate branch for attachments
+2. Or add `attachments/` to `.gitignore` (though files are already uploaded via API)
 
 ## How It Works
 

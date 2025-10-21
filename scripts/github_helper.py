@@ -309,45 +309,67 @@ class GitHubHelper:
             logger.error(f"Error adding issue to project: {e}")
             return False
 
-    def upload_image(self, image_data: bytes, filename: str) -> Optional[str]:
+    def upload_attachment_to_repo(self, file_data: bytes, filename: str, issue_number: int) -> Optional[str]:
         """
-        Upload an image to GitHub's asset server.
+        Upload an attachment to the repository using the Contents API.
 
-        Uses an unofficial GitHub endpoint that allows uploading images
-        that can be referenced in issues/comments.
+        Files are stored in: attachments/issue-{number}/{filename}
 
         Args:
-            image_data: Image binary data
-            filename: Image filename
+            file_data: File binary data
+            filename: Filename
+            issue_number: Issue number (for organizing files)
 
         Returns:
-            URL of uploaded image, or None if failed
+            URL to the file in the repository, or None if failed
         """
-        url = f"{self.base_url}/repos/{self.repository}/issues/assets"
+        import base64
 
-        headers = {
-            "Authorization": f"token {self.token}",
-            "Content-Type": "application/octet-stream"
+        # Create path: attachments/issue-{number}/{filename}
+        path = f"attachments/issue-{issue_number}/{filename}"
+        url = f"{self.base_url}/repos/{self.repository}/contents/{path}"
+
+        # Encode file data as base64
+        content_base64 = base64.b64encode(file_data).decode('utf-8')
+
+        # Check if file already exists (to get SHA for update)
+        try:
+            check_response = requests.get(url, headers=self.headers)
+            if check_response.status_code == 200:
+                existing_sha = check_response.json().get('sha')
+                logger.debug(f"File {filename} already exists, updating...")
+            else:
+                existing_sha = None
+        except:
+            existing_sha = None
+
+        # Prepare request data
+        data = {
+            "message": f"Add attachment for issue #{issue_number}: {filename}",
+            "content": content_base64
         }
 
-        params = {"name": filename}
+        if existing_sha:
+            data["sha"] = existing_sha
 
         try:
-            logger.info(f"Uploading image: {filename} ({len(image_data)} bytes)")
-            response = requests.post(
-                url,
-                data=image_data,
-                headers=headers,
-                params=params
-            )
+            logger.info(f"Uploading attachment to repo: {path} ({len(file_data)} bytes)")
+            response = requests.put(url, json=data, headers=self.headers)
             response.raise_for_status()
             result = response.json()
 
-            # GitHub returns the URL in the response
-            image_url = result.get('url') or result.get('browser_download_url')
-            logger.info(f"Image uploaded successfully: {image_url}")
-            return image_url
+            # Get the URL to the file
+            file_url = result.get('content', {}).get('html_url')
+
+            if file_url:
+                logger.info(f"Attachment uploaded successfully: {file_url}")
+                return file_url
+            else:
+                logger.error(f"No URL in upload response")
+                return None
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error uploading image {filename}: {e}")
+            logger.error(f"Error uploading attachment {filename}: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"Response: {e.response.text}")
             return None
