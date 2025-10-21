@@ -174,10 +174,32 @@ The workflows will start running based on your chosen triggers.
 
 **Storage Notes:**
 - Attachments are committed directly to your repository via GitHub API
-- **Git LFS Compatible**: Files bypass Git LFS even if configured (uploaded via API, not git commands)
 - Repository size: GitHub recommends keeping repos under 1GB (see [GitHub Docs](https://docs.github.com/en/repositories/working-with-large-files/about-large-files-on-github))
 - Individual file limit: 50MB warning, 100MB hard limit per file
-- For high-volume helpdesks, consider periodic cleanup of old attachment folders
+
+**Recommended: Enable Git LFS for Attachments**
+
+To avoid repository bloat from large attachments, enable Git LFS in your repository:
+
+1. **Create `attachments/.gitattributes`** in your repository with:
+   ```
+   # Track all helpdesk attachments with Git LFS
+   * filter=lfs diff=lfs merge=lfs -text
+   ```
+
+2. **Commit the file** to your repository (via GitHub web UI or git):
+   ```bash
+   git add attachments/.gitattributes
+   git commit -m "Enable Git LFS for helpdesk attachments"
+   git push
+   ```
+
+3. **That's it!** Future attachments will automatically use LFS storage (no local LFS installation needed)
+
+**Git LFS Free Tier:**
+- Free/Pro: 10 GB storage + 10 GB bandwidth/month
+- Team/Enterprise: 250 GB storage + 250 GB bandwidth/month
+- Overage: $0.07/GB storage, $0.0875/GB bandwidth
 
 ## How It Works
 
