@@ -31,12 +31,16 @@ def get_env_or_exit(var_name: str) -> str:
     return value
 
 
-def should_skip_comment(event_data: dict) -> tuple[bool, str]:
+def should_skip_comment(event_data: dict, customer_bot_username: str = None) -> tuple[bool, str]:
     """
     Check if comment should be skipped.
 
+    Comments are only sent to customer if they mention the customer bot.
+    This is an opt-in approach - safer than opt-out.
+
     Args:
         event_data: GitHub webhook event data
+        customer_bot_username: Username of bot that represents the customer (without @)
 
     Returns:
         Tuple of (should_skip, reason)
@@ -61,7 +65,32 @@ def should_skip_comment(event_data: dict) -> tuple[bool, str]:
     if has_email_marker(comment_body):
         return True, "Comment originated from email (has marker)"
 
+    # Check if comment mentions customer bot (opt-in to send to customer)
+    if customer_bot_username:
+        if not mentions_customer_bot(comment_body, customer_bot_username):
+            return True, f"Comment does not mention @{customer_bot_username} (internal comment)"
+
     return False, ""
+
+
+def mentions_customer_bot(comment_body: str, customer_bot_username: str) -> bool:
+    """
+    Check if comment mentions the customer bot (indicating it should be sent to customer).
+
+    Args:
+        comment_body: Comment text
+        customer_bot_username: Bot username to check for (without @)
+
+    Returns:
+        True if comment mentions the customer bot
+    """
+    if not comment_body or not customer_bot_username:
+        return False
+
+    # Check for @username mention (case insensitive)
+    mention = f"@{customer_bot_username}"
+
+    return mention.lower() in comment_body.lower()
 
 
 def process_comment(event_data: dict, github: GitHubHelper, smtp_config: dict) -> bool:
@@ -181,6 +210,33 @@ def update_issue_metadata(issue: dict, new_message_id: str, metadata: dict, gith
         logger.error(f"Error updating issue metadata: {e}")
 
 
+def get_authenticated_user(github_token: str) -> str:
+    """
+    Get the username of the authenticated GitHub user.
+
+    Args:
+        github_token: GitHub token
+
+    Returns:
+        Username of the authenticated user
+    """
+    import requests
+
+    try:
+        response = requests.get(
+            "https://api.github.com/user",
+            headers={
+                "Authorization": f"token {github_token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+        )
+        response.raise_for_status()
+        return response.json().get('login', '')
+    except Exception as e:
+        logger.warning(f"Could not get authenticated user: {e}")
+        return ''
+
+
 def main():
     """Main workflow function."""
     logger.info("Starting github-to-email workflow")
@@ -193,6 +249,13 @@ def main():
     github_token = get_env_or_exit('GITHUB_TOKEN')
     github_repository = get_env_or_exit('GITHUB_REPOSITORY')
     event_path = os.getenv('GITHUB_EVENT_PATH')
+
+    # Get the username of the authenticated user (customer bot)
+    customer_bot_username = get_authenticated_user(github_token)
+    if customer_bot_username:
+        logger.info(f"📋 Customer bot: @{customer_bot_username} - comments must mention this user to be sent to customer")
+    else:
+        logger.warning("⚠️  Could not determine customer bot username - all comments will be sent to customer")
 
     if not event_path:
         logger.error("GITHUB_EVENT_PATH not set (not running in GitHub Actions?)")
@@ -207,7 +270,7 @@ def main():
         sys.exit(1)
 
     # Check if we should skip this comment
-    should_skip, reason = should_skip_comment(event_data)
+    should_skip, reason = should_skip_comment(event_data, customer_bot_username)
 
     if should_skip:
         logger.info(f"⏭️  Skipping comment: {reason}")
