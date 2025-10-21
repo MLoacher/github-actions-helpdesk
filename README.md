@@ -149,7 +149,7 @@ The workflows will start running based on your chosen triggers.
 1. **View tickets**: Check the GitHub Issues page
    - Filter by `label:helpdesk` to see all support tickets
    - Images from customer emails are embedded inline
-   - Non-image attachments show a note to check the original email
+   - Other attachments are linked and can be downloaded from the repository
 
 2. **Reply to customers**: Add a comment mentioning the customer bot
    - **To send to customer**: Mention `@customer-bot` in your comment
@@ -187,8 +187,8 @@ The workflows will start running based on your chosen triggers.
    - If found, adds comment to existing issue
    - If not found, searches by email metadata or creates new issue
    - **Processes attachments:**
-     - Images: Uploaded to GitHub and embedded inline
-     - Other files: Listed with note to check original email
+     - Images: Uploaded to repository and embedded inline
+     - Other files: Uploaded to repository and linked in issue
    - Embeds email metadata in issue body (HTML comment)
    - Marks email as SEEN
 
